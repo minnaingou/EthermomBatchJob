@@ -15,15 +15,15 @@ import com.mno.ethermom.utils.HttpUtil;
 import com.mno.ethermom.utils.messaging.MessagingUtil;
 
 /**
- * Ethermine.org monitoring job.
- * Sends out alert to IFTTT or Telegram channel when hashrate dropped. 
+ * Ethermine.org monitoring job. Sends out alert to IFTTT or Telegram channel
+ * when hashrate dropped.
  * 
  * @author Min Naing Oo
  * @version 1.0
  *
  */
 public class App {
-	
+
 	private static Logger logger = Logger.getLogger(App.class);
 
 	public static void main(String[] args) {
@@ -83,6 +83,11 @@ public class App {
 								"Invalid expected hashrate. Please set workers 'expectedHash' property");
 					}
 
+					if (worker.getReportedHashrate() == null) {
+						problemWorkers.put(worker.getWorker(), -1.0);
+						continue;
+					}
+
 					if (worker.getReportedHashrate() < expectedHash) {
 						problemWorkers.put(worker.getWorker(),
 								ConversionUtil.convertToMHs(worker.getReportedHashrate()));
@@ -93,7 +98,11 @@ public class App {
 					StringBuilder message = new StringBuilder();
 					message.append("Reported hashrate is lower than expected for following worker(s).");
 					for (String key : problemWorkers.keySet()) {
-						message.append("\n" + key + " @" + problemWorkers.get(key) + "MH/s");
+						if (problemWorkers.get(key) < 0) {
+							message.append("\n" + key + " @offline");
+						} else {
+							message.append("\n" + key + " @" + problemWorkers.get(key) + "MH/s");
+						}
 					}
 
 					MessagingUtil.sendMessage(message.toString());
@@ -136,6 +145,11 @@ public class App {
 									"Invalid expected hashrate. Please set workers 'expectedHash' property");
 						}
 
+						if (worker.getReportedHashrate() == null) {
+							problemWorkers.put(worker.getWorker(), -1.0);
+							continue;
+						}
+
 						if (worker.getReportedHashrate() < expectedHash) {
 							problemWorkers.put(worker.getWorker(),
 									ConversionUtil.convertToMHs(worker.getReportedHashrate()));
@@ -146,7 +160,11 @@ public class App {
 						StringBuilder message = new StringBuilder();
 						message.append("Reported hashrate is lower than expected for following worker(s).");
 						for (String key : problemWorkers.keySet()) {
-							message.append("\n" + key + " @" + problemWorkers.get(key) + "MH/s");
+							if (problemWorkers.get(key) < 0) {
+								message.append("\n" + key + " @offline");
+							} else {
+								message.append("\n" + key + " @" + problemWorkers.get(key) + "MH/s");
+							}
 						}
 
 						MessagingUtil.sendMessage(message.toString());
