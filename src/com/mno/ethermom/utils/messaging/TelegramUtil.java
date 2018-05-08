@@ -1,10 +1,8 @@
 package com.mno.ethermom.utils.messaging;
 
-import java.io.IOException;
 import java.net.URLEncoder;
 
 import org.apache.http.HttpResponse;
-import org.apache.http.client.ClientProtocolException;
 import org.apache.http.client.HttpClient;
 import org.apache.http.client.methods.HttpGet;
 import org.apache.http.impl.client.HttpClientBuilder;
@@ -16,7 +14,7 @@ public class TelegramUtil {
 	private static final String API_URL = "https://api.telegram.org/bot";
 	private static final String API_FUNCTION_SENDMSG = "sendMessage";
 
-	public static void sendMessage(String message) throws ClientProtocolException, IOException {
+	public static void sendMessage(String message) throws Exception {
 		String apiKey = ConfigUtil.getTelegramApiKey();
 		if (apiKey == null || apiKey.isEmpty()) {
 			throw new IllegalArgumentException("Telegram API Key is missing.");
@@ -38,7 +36,7 @@ public class TelegramUtil {
 		HttpResponse response = httpClient.execute(getRequest);
 		
 		if (response.getStatusLine().getStatusCode() != 200) {
-			System.out.println("Failed to send message");
+			throw new Exception("Failed to send message with Telegram.");
 		}
 	}
 

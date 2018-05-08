@@ -152,7 +152,6 @@ public class App {
 						MessagingUtil.sendMessage(message.toString());
 					}
 				}
-
 			}
 
 		} catch (Exception e) {
