@@ -1,11 +1,5 @@
 package com.mno.ethermom;
 
-import java.util.LinkedHashMap;
-import java.util.List;
-import java.util.Map;
-
-import org.apache.log4j.Logger;
-
 import com.mno.ethermom.domain.CurrentStatsJsonResponse;
 import com.mno.ethermom.domain.Worker;
 import com.mno.ethermom.domain.WorkersJsonResponse;
@@ -13,6 +7,12 @@ import com.mno.ethermom.utils.ConfigUtil;
 import com.mno.ethermom.utils.ConversionUtil;
 import com.mno.ethermom.utils.HttpUtil;
 import com.mno.ethermom.utils.messaging.MessagingUtil;
+
+import java.io.File;
+import java.io.IOException;
+import java.util.LinkedHashMap;
+import java.util.List;
+import java.util.Map;
 
 /**
  * Ethermine.org monitoring job. Sends out alert to IFTTT or Telegram channel
@@ -24,10 +24,12 @@ import com.mno.ethermom.utils.messaging.MessagingUtil;
  */
 public class App {
 
-    private static Logger logger = Logger.getLogger(App.class);
+	private static final File lockfile = new File("reported.lock");
+	private static final File runningfile = new File("running.lock");
+
     public static void main( String[] args ) {
 
-        logger.info("Job started.");
+        System.out.println("Job started.");
 
 		try {
 			ConfigUtil.loadConfigs();
@@ -59,6 +61,10 @@ public class App {
 				if (currentStatsRes.getData().getReportedHashrate() < expectedHash) {
 					MessagingUtil.sendMessage("Reported hashrate is lower than expected @"
 							+ ConversionUtil.convertToMHs(currentStatsRes.getData().getReportedHashrate()) + "MH/s.");
+				}
+
+				if (ConfigUtil.isStaleCheck()) {
+					checkStale(currentStatsRes);
 				}
 
 			} else if (ConfigUtil.getMode() == ConfigUtil.CONFIG_MODE_INDIVIDUAL) {
@@ -94,18 +100,11 @@ public class App {
 					}
 				}
 
-				if (!problemWorkers.isEmpty()) {
-					StringBuilder message = new StringBuilder();
-					message.append("Reported hashrate is lower than expected for following worker(s).");
-					for (String key : problemWorkers.keySet()) {
-						if (problemWorkers.get(key) < 0) {
-							message.append("\n" + key + " @offline");
-						} else {
-							message.append("\n" + key + " @" + problemWorkers.get(key) + "MH/s");
-						}
-					}
-
-					MessagingUtil.sendMessage(message.toString());
+				if (! problemWorkers.isEmpty()) {
+					manageReport(problemWorkers);
+				} else if (lockfile.exists()) {
+					lockfile.delete();
+					MessagingUtil.sendMessage("Previously failed workers are back to normal.");
 				}
 
 			} else if (ConfigUtil.getMode() == ConfigUtil.CONFIG_MODE_MIX) {
@@ -156,27 +155,66 @@ public class App {
 						}
 					}
 
-					if (!problemWorkers.isEmpty()) {
-						StringBuilder message = new StringBuilder();
-						message.append("Reported hashrate is lower than expected for following worker(s).");
-						for (String key : problemWorkers.keySet()) {
-							if (problemWorkers.get(key) < 0) {
-								message.append("\n" + key + " @offline");
-							} else {
-								message.append("\n" + key + " @" + problemWorkers.get(key) + "MH/s");
-							}
-						}
-
-						MessagingUtil.sendMessage(message.toString());
+					if (! problemWorkers.isEmpty()) {
+						manageReport(problemWorkers);
 					}
+				} else if (lockfile.exists()) {
+					lockfile.delete();
+					MessagingUtil.sendMessage("Previously failed workers are back to normal.");
+				}
+
+				if (ConfigUtil.isStaleCheck()) {
+					checkStale(currentStatsRes);
 				}
 			}
 
 		} catch (Exception e) {
-			logger.error(e.getMessage(), e);
+			e.printStackTrace();
+			System.out.println(e.getMessage());
 		} finally {
-			logger.info("Job ended.");
+			runningfile.delete();
+			try {
+				runningfile.createNewFile();
+			} catch (IOException e) {
+				e.printStackTrace();
+			}
+			System.out.println("Job ended.");
 			System.exit(0);
 		}
     }
+
+    private static void checkStale(CurrentStatsJsonResponse currentStatsRes) throws Exception {
+		if (currentStatsRes.getData().getStaleShares() > (currentStatsRes.getData().getValidShares() * ConfigUtil.getStaleTolerance() / 100)) {
+			MessagingUtil.sendMessage("Stale shares are too high @ " +
+					currentStatsRes.getData().getStaleShares() +  "/" +
+					currentStatsRes.getData().getValidShares()
+					+ ". Check your workers.%0A%0A<i>Stale Tolerance is set to " + ConfigUtil.getStaleTolerance() + "%</i>");
+		}
+	}
+
+	private static void manageReport(Map<String, Double> problemWorkers) throws Exception {
+
+		boolean reportFlag = true;
+
+		if (lockfile.exists()) {
+			lockfile.delete();
+			reportFlag = ConfigUtil.isContinuousReport();
+		}
+		lockfile.createNewFile();
+
+		if (reportFlag) {
+			StringBuilder message = new StringBuilder();
+			message.append("Reported hashrate is lower than expected for following worker(s).");
+			for (String key : problemWorkers.keySet()) {
+				if (problemWorkers.get(key) < 0) {
+					message.append("%0A" + key + " is offline");
+				} else {
+					message.append("%0A" + key + " @" + problemWorkers.get(key) + "MH/s");
+				}
+			}
+
+			MessagingUtil.sendMessage(message.toString());
+		}
+	}
+
 }

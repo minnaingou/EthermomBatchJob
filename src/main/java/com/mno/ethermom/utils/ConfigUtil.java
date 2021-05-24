@@ -21,6 +21,9 @@ public class ConfigUtil {
 	private static final String CONFIG_WALLET = "wallet";
 	private static final String CONFIG_ENABLED = "enabled";
 	private static final String CONFIG_MODE = "mode";
+	private static final String CONFIG_CONTINUOUS = "continuousReport";
+	private static final String CONFIG_STALECHECK = "checkStale";
+	private static final String CONFIG_STALETOLERANCE = "staleTolerance";
 	public static final int CONFIG_MODE_TOTAL = 1;
 	public static final int CONFIG_MODE_INDIVIDUAL = 2;
 	public static final int CONFIG_MODE_MIX = 3;
@@ -41,6 +44,7 @@ public class ConfigUtil {
 			String rootDir = new File(
 					App.class.getProtectionDomain().getCodeSource().getLocation().toURI().getPath()).getParent();
 			input = new FileInputStream(rootDir + "/" + CONFIG_PATH);
+			System.out.println("Reading config from " + rootDir + "/" + CONFIG_PATH);
 			
 			prop.load(input);
 			
@@ -69,6 +73,18 @@ public class ConfigUtil {
 
 	public static int getMode() {
 		return Integer.parseInt(propsMap.getOrDefault(CONFIG_MODE, String.valueOf(CONFIG_MODE_TOTAL)));
+	}
+
+	public static boolean isContinuousReport() {
+		return Boolean.parseBoolean(propsMap.getOrDefault(CONFIG_CONTINUOUS, "true"));
+	}
+
+	public static boolean isStaleCheck() {
+		return Boolean.parseBoolean(propsMap.getOrDefault(CONFIG_STALECHECK, "true"));
+	}
+
+	public static double getStaleTolerance() {
+		return Double.parseDouble(propsMap.get(CONFIG_STALETOLERANCE));
 	}
 
 	public static double getExpectedHash(String forWorker) {

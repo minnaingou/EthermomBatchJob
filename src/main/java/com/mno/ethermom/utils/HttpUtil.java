@@ -1,19 +1,15 @@
 package com.mno.ethermom.utils;
 
+import com.google.gson.Gson;
+import com.google.gson.GsonBuilder;
+import com.squareup.okhttp.OkHttpClient;
+import com.squareup.okhttp.Request;
+import com.squareup.okhttp.Response;
+
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
-
-import org.apache.http.HttpEntity;
-import org.apache.http.HttpResponse;
-import org.apache.http.client.ClientProtocolException;
-import org.apache.http.client.HttpClient;
-import org.apache.http.client.methods.HttpGet;
-import org.apache.http.impl.client.HttpClientBuilder;
-
-import com.google.gson.Gson;
-import com.google.gson.GsonBuilder;
 
 public class HttpUtil {
 
@@ -23,22 +19,21 @@ public class HttpUtil {
 	public static final String API_FUNCTION_CURRENTSTATS = "currentStats";
 	public static final String API_FUNCTION_WORKERS = "workers";
 
-	public static Object getJsonFromUrl(String restUrl, Class<?> clazz) throws ClientProtocolException, IOException {
+	public static Object getJsonFromUrl(String restUrl, Class<?> clazz) throws IOException {
 
-		HttpClient httpClient = HttpClientBuilder.create().build();
-		HttpGet getRequest = new HttpGet(restUrl);
-		HttpResponse response = httpClient.execute(getRequest);
-		HttpEntity entity = response.getEntity();
-		if (entity != null) {
-			InputStream instream = entity.getContent();
-			String result = convertStreamToString(instream);
-			instream.close();
-			if (result != null && response.getStatusLine().getStatusCode() == 200) {
-				Gson jsonRes = new GsonBuilder().create();
-				Object obj = jsonRes.fromJson(result, clazz);
-				return obj;
-			}
+		OkHttpClient client = new OkHttpClient();
+
+		Request request = new Request.Builder()
+				.url(restUrl)
+				.build(); // defaults to GET
+
+		Response response = client.newCall(request).execute();
+
+		if (response.isSuccessful()) {
+			Gson jsonRes = new GsonBuilder().create();
+			return jsonRes.fromJson(response.body().string(), clazz);
 		}
+
 		return null;
 	}
 

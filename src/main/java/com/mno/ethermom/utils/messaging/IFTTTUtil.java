@@ -1,13 +1,11 @@
 package com.mno.ethermom.utils.messaging;
 
-import java.net.URLEncoder;
-
-import org.apache.http.HttpResponse;
-import org.apache.http.client.HttpClient;
-import org.apache.http.client.methods.HttpGet;
-import org.apache.http.impl.client.HttpClientBuilder;
-
 import com.mno.ethermom.utils.ConfigUtil;
+import com.squareup.okhttp.OkHttpClient;
+import com.squareup.okhttp.Request;
+import com.squareup.okhttp.Response;
+
+import java.net.URLEncoder;
 
 public class IFTTTUtil {
 
@@ -26,16 +24,20 @@ public class IFTTTUtil {
 		
 		message = message.replaceAll("\n", "<br>");
 
-		HttpClient httpClient = HttpClientBuilder.create().build();
+		OkHttpClient client = new OkHttpClient();
+
 		StringBuilder restUrl = new StringBuilder();
 		restUrl.append(String.format(API_URL, eventName));
 		restUrl.append(API_URL.endsWith("/") ? "" : "/");
 		restUrl.append(apiKey);
 		restUrl.append("?value1=" + URLEncoder.encode(message, "UTF-8"));
-		HttpGet getRequest = new HttpGet(restUrl.toString());
-		HttpResponse response = httpClient.execute(getRequest);
 
-		if (response.getStatusLine().getStatusCode() != 200) {
+		Request request = new Request.Builder()
+				.url(restUrl.toString())
+				.build(); // defaults to GET
+
+		Response response = client.newCall(request).execute();
+		if (! response.isSuccessful()) {
 			throw new Exception("Failed to send message with IFTTT.");
 		}
 	}
