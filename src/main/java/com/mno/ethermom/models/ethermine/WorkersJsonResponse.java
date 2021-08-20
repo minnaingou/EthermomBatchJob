@@ -1,17 +1,18 @@
 
-package com.mno.ethermom.domain;
+package com.mno.ethermom.domain.ethermine;
 
+import java.util.List;
 import com.google.gson.annotations.Expose;
 import com.google.gson.annotations.SerializedName;
 
-public class CurrentStatsJsonResponse {
+public class WorkersJsonResponse {
 
 	@SerializedName("status")
 	@Expose
 	private String status;
 	@SerializedName("data")
 	@Expose
-	private CurrentStats data;
+	private List<Worker> data = null;
 
 	public String getStatus() {
 		return status;
@@ -21,11 +22,11 @@ public class CurrentStatsJsonResponse {
 		this.status = status;
 	}
 
-	public CurrentStats getData() {
+	public List<Worker> getData() {
 		return data;
 	}
 
-	public void setData(CurrentStats data) {
+	public void setData(List<Worker> data) {
 		this.data = data;
 	}
 
