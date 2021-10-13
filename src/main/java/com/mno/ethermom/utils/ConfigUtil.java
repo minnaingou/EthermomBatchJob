@@ -1,5 +1,7 @@
 package com.mno.ethermom.utils;
 
+import com.mno.ethermom.App;
+
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
@@ -8,8 +10,6 @@ import java.net.URISyntaxException;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Properties;
-
-import com.mno.ethermom.App;
 
 public class ConfigUtil {
 
@@ -20,13 +20,10 @@ public class ConfigUtil {
 	// config properties
 	private static final String CONFIG_WALLET = "wallet";
 	private static final String CONFIG_ENABLED = "enabled";
-	private static final String CONFIG_MODE = "mode";
+	private static final String CONFIG_POOL = "pool";
 	private static final String CONFIG_CONTINUOUS = "continuousReport";
 	private static final String CONFIG_STALECHECK = "checkStale";
 	private static final String CONFIG_STALETOLERANCE = "staleTolerance";
-	public static final int CONFIG_MODE_TOTAL = 1;
-	public static final int CONFIG_MODE_INDIVIDUAL = 2;
-	public static final int CONFIG_MODE_MIX = 3;
 	private static final String CONFIG_EXPECTED_HASH = "expectedHash";
 	private static final String CONFIG_WORKERS = "workers";
 	private static final String CONFIG_TELEGRAM_ENABLED = "telegram.enabled";
@@ -71,8 +68,8 @@ public class ConfigUtil {
 		return propsMap.get(CONFIG_WALLET);
 	}
 
-	public static int getMode() {
-		return Integer.parseInt(propsMap.getOrDefault(CONFIG_MODE, String.valueOf(CONFIG_MODE_TOTAL)));
+	public static String getPool() {
+		return propsMap.get(CONFIG_POOL);
 	}
 
 	public static boolean isContinuousReport() {
@@ -97,11 +94,10 @@ public class ConfigUtil {
 		if (expectedHashStr != null) {
 			double expectedHash = 0;
 			try {
-				expectedHash = Double.parseDouble(expectedHashStr);
+				return Double.parseDouble(expectedHashStr);
 			} catch (NumberFormatException e) {
 				return 0;
 			}
-			return ConversionUtil.convertFromMHs(expectedHash);
 			
 		} else {
 			return -1;

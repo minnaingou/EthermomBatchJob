@@ -6,6 +6,9 @@ import com.mno.ethermom.models.PoolStats;
 import com.mno.ethermom.models.ethermine.CurrentStatsJsonResponse;
 import com.mno.ethermom.models.ethermine.Worker;
 import com.mno.ethermom.models.ethermine.WorkersJsonResponse;
+import com.mno.ethermom.models.nanopool.LastReported;
+import com.mno.ethermom.models.nanopool.WorkerStats;
+import com.mno.ethermom.models.nanopool.WorkersLastReported;
 import com.mno.ethermom.services.PoolService;
 import com.mno.ethermom.utils.ConfigUtil;
 import com.mno.ethermom.utils.ConversionUtil;
@@ -18,95 +21,69 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 
-public class EthermineServiceImpl implements PoolService {
+public class NanopoolServiceImpl implements PoolService {
 
-    private static final String STATUS_OK = "OK";
-
-    private static final String API_URL = "https://api.ethermine.org/miner";
-    private static final String API_FUNCTION_CURRENTSTATS = "currentStats";
-    private static final String API_FUNCTION_WORKERS = "workers";
+    private static final String BASE_URL = "https://api.nanopool.org/v1/eth";
+    private static final String API_FUNCTION_CURRENTSTATS = "/reportedhashrate/";
+    private static final String API_FUNCTION_WORKERS = "/reportedhashrates/";
 
     @Override
     public PoolStats getPoolStats(String walletAddr) throws Exception {
 
         PoolStats poolStats = new PoolStats();
 
-        CurrentStatsJsonResponse currentStatsRes = (CurrentStatsJsonResponse) this.getJsonFromUrl(
-                this.getApiUrl(walletAddr, API_FUNCTION_CURRENTSTATS),
-                CurrentStatsJsonResponse.class);
-
-        if (currentStatsRes == null || !STATUS_OK.equals(currentStatsRes.getStatus())) {
-            throw new Exception("API is not working.");
-        }
-
         double totalExpectedHash = ConfigUtil.getExpectedHash(null);
         if (totalExpectedHash <= 0) {
             throw new IllegalArgumentException("Invalid expected hashrate. Please set 'expectedHash' property");
         }
 
-        if (currentStatsRes.getData().getReportedHashrate() < totalExpectedHash) {
+        double reportedHash = this.getCurrentStats(walletAddr);
 
-            WorkersJsonResponse workersRes = (WorkersJsonResponse) this.getJsonFromUrl(
-                    this.getApiUrl(walletAddr, API_FUNCTION_WORKERS), WorkersJsonResponse.class);
-
-            if (workersRes == null || !STATUS_OK.equals(workersRes.getStatus())) {
-                throw new Exception("API is not working.");
-            }
-
-            List<Worker> workers = workersRes.getData();
-            if (workers == null || workers.isEmpty()) {
-                throw new IllegalArgumentException("No active workers");
-            }
-
+        if (reportedHash < totalExpectedHash) {
             Map<String, Double> problemWorkers = new LinkedHashMap<>();
-            for (Worker worker : workers) {
-                double expectedHash = ConfigUtil.getExpectedHash(worker.getWorker());
+
+            List<WorkerStats> workers = this.getWorkerStats(walletAddr);
+            for (WorkerStats worker : workers) {
+                double expectedHash = ConfigUtil.getExpectedHash(worker.getWorker().toLowerCase());
                 if (expectedHash <= 0) {
                     throw new IllegalArgumentException(
                             "Invalid expected hashrate. Please set workers 'expectedHash' property");
                 }
 
-                if (worker.getReportedHashrate() == null) {
-                    problemWorkers.put(worker.getWorker(), -1.0);
-                    continue;
-                }
-
-                if (worker.getReportedHashrate() < expectedHash) {
-                    problemWorkers.put(worker.getWorker(),
-                            ConversionUtil.convertToMHs(worker.getReportedHashrate()));
+                if (worker.getHashrate() < expectedHash) {
+                    problemWorkers.put(worker.getWorker(), worker.getHashrate());
                 }
             }
-
             poolStats.setProblemWorkers(problemWorkers);
         }
-
-        poolStats.getShare().setSupported(true);
-        poolStats.getShare().setValid(currentStatsRes.getData().getValidShares());
-        poolStats.getShare().setStale(currentStatsRes.getData().getStaleShares());
 
         return poolStats;
     }
 
-    public Object getJsonFromUrl(String restUrl, Class<?> clazz) throws IOException {
-
+    private double getCurrentStats(String walletAddr) throws IOException {
         OkHttpClient client = new OkHttpClient();
-
         Request request = new Request.Builder()
-                .url(restUrl)
-                .build(); // defaults to GET
-
+                .url(BASE_URL + API_FUNCTION_CURRENTSTATS + walletAddr)
+                .build();
         Response response = client.newCall(request).execute();
-
         if (response.isSuccessful()) {
-            Gson jsonRes = new GsonBuilder().create();
-            return jsonRes.fromJson(response.body().string(), clazz);
+            LastReported lastReported = new Gson().fromJson(response.body().string(), LastReported.class);
+            return lastReported.getData();
         }
-
-        return null;
+        return -1;
     }
 
-    public String getApiUrl(String walletAddr, String apiFunction) {
-        return API_URL + (API_URL.endsWith("/") ? "" : "/") + walletAddr + "/" + apiFunction;
+    private List<WorkerStats> getWorkerStats(String walletAddr) throws IOException {
+        OkHttpClient client = new OkHttpClient();
+        Request request = new Request.Builder()
+                .url(BASE_URL + API_FUNCTION_WORKERS + walletAddr)
+                .build();
+        Response response = client.newCall(request).execute();
+        if (response.isSuccessful()) {
+            WorkersLastReported workers = new Gson().fromJson(response.body().string(), WorkersLastReported.class);
+            return workers.getData();
+        }
+        return null;
     }
 
 }

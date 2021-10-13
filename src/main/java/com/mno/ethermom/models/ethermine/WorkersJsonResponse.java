@@ -1,5 +1,5 @@
 
-package com.mno.ethermom.domain.ethermine;
+package com.mno.ethermom.models.ethermine;
 
 import java.util.List;
 import com.google.gson.annotations.Expose;
