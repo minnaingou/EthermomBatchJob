@@ -5,8 +5,6 @@ import com.squareup.okhttp.OkHttpClient;
 import com.squareup.okhttp.Request;
 import com.squareup.okhttp.Response;
 
-import java.net.URLEncoder;
-
 public class TelegramUtil {
 	
 	private static final String API_URL = "https://api.telegram.org/bot";
