@@ -1,17 +1,11 @@
 
-package com.mno.ethermom.domain;
+package com.mno.ethermom.domain.ethermine;
 
 import com.google.gson.annotations.Expose;
 import com.google.gson.annotations.SerializedName;
 
-public class Worker {
+public class CurrentStats {
 
-	@SerializedName("worker")
-	@Expose
-	private String worker;
-	@SerializedName("time")
-	@Expose
-	private Integer time;
 	@SerializedName("lastSeen")
 	@Expose
 	private Integer lastSeen;
@@ -30,25 +24,9 @@ public class Worker {
 	@SerializedName("staleShares")
 	@Expose
 	private Integer staleShares;
-	@SerializedName("averageHashrate")
+	@SerializedName("activeWorkers")
 	@Expose
-	private Double averageHashrate;
-
-	public String getWorker() {
-		return worker;
-	}
-
-	public void setWorker(String worker) {
-		this.worker = worker;
-	}
-
-	public Integer getTime() {
-		return time;
-	}
-
-	public void setTime(Integer time) {
-		this.time = time;
-	}
+	private Integer activeWorkers;
 
 	public Integer getLastSeen() {
 		return lastSeen;
@@ -98,12 +76,12 @@ public class Worker {
 		this.staleShares = staleShares;
 	}
 
-	public Double getAverageHashrate() {
-		return averageHashrate;
+	public Integer getActiveWorkers() {
+		return activeWorkers;
 	}
 
-	public void setAverageHashrate(Double averageHashrate) {
-		this.averageHashrate = averageHashrate;
+	public void setActiveWorkers(Integer activeWorkers) {
+		this.activeWorkers = activeWorkers;
 	}
 
 }
