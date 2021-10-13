@@ -14,5 +14,5 @@ Java application to monitor the ethermine.org and notify Telegram or IFTTT webho
 
 # TODO:
 <ul>
-<li>to convert maven base</li>
+<li>To convert to Spring Boot and outsource configs to application.yml to run as a cronjob in cloud</li>
 </ul>
