@@ -1,6 +1,6 @@
 # EthermomBatchJob
 
-Java application to monitor the ethermine.org and notify Telegram or IFTTT webhook when hashrate is dropped below certain point. Schedule it to run in interval as per your liking with Windows task scheduler.
+A configurable batch job application to monitor the cryptocurrency mining status on Nanopool and Ethermine mining pools and broadcast about the hash rates and the stale rates to the users on telegram channel or IFTTT webhook.
 
 # DEPENDENCIES:
 <ul>
